@@ -1,12 +1,12 @@
 {
     "manifest_version": 2,
-    "name": "Is ChatGPT Typing?",
-    "version": "0.0.4",
-    "description": "A Firefox add-on that lets you know when ChatGPT has finished typing. Don't forget to pin the addon to your toolbar to be able to see when it finishes typing!",
-    "permissions": ["tabs", "storage", "activeTab", "https://chat.openai.com/*"],
+    "name": "AI Chat Status Notifier",
+    "version": "0.0.5",
+    "description": "A Firefox add-on that lets you know when ChatGPT, Claude, or Perplexity has finished typing. Don't forget to pin the addon to your toolbar to be able to see when it finishes typing!",
+    "permissions": ["tabs", "storage", "activeTab", "https://chat.openai.com/*", "https://claude.ai/*", "https://www.perplexity.ai/*"],
     "content_scripts": [
         {
-          "matches": ["https://chat.openai.com/*"],
+          "matches": ["https://chat.openai.com/*", "https://claude.ai/*", "https://www.perplexity.ai/*"],
           "js": ["content_script.js"]
         }
       ],
@@ -25,7 +25,7 @@
       "default_icon": {
         "48": "icons/icon48.png"
       },
-      "default_title": "Is ChatGPT Typing?"
+      "default_title": "AI Chat Status Notifier"
     },
     "web_accessible_resources": [
       "content_script.js"
