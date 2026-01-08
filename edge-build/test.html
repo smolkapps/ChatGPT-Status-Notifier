@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .platform-test {
+            border: 2px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .platform-test h2 {
+            margin-top: 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Chat Status Notifier - Test Page</h1>
+
+    <!-- ChatGPT Simulation -->
+    <div class="platform-test">
+        <h2>ChatGPT Simulation (chat.openai.com)</h2>
+        <button class="btn-neutral" id="chatgpt-btn">Stop generating</button>
+        <button onclick="toggleChatGPT()">Toggle State</button>
+        <div class="status" id="chatgpt-status">Status: Generating</div>
+    </div>
+
+    <!-- Claude Simulation -->
+    <div class="platform-test">
+        <h2>Claude Simulation (claude.ai)</h2>
+        <button aria-label="Stop" id="claude-stop" style="display: block;">Stop</button>
+        <div data-test-render-type="streaming" id="claude-indicator" style="display: none;">Typing...</div>
+        <button onclick="toggleClaude()">Toggle State</button>
+        <div class="status" id="claude-status">Status: Generating</div>
+    </div>
+
+    <!-- Perplexity Simulation -->
+    <div class="platform-test">
+        <h2>Perplexity Simulation (perplexity.ai)</h2>
+        <button aria-label="Stop generating" id="perplexity-btn" style="display: block;">Stop</button>
+        <div class="streaming" id="perplexity-indicator" style="display: none;">Streaming...</div>
+        <button onclick="togglePerplexity()">Toggle State</button>
+        <div class="status" id="perplexity-status">Status: Generating</div>
+    </div>
+
+    <script>
+        // ChatGPT toggle
+        function toggleChatGPT() {
+            const btn = document.getElementById('chatgpt-btn');
+            const status = document.getElementById('chatgpt-status');
+            if (btn.innerText === 'Stop generating') {
+                btn.innerText = 'Regenerate response';
+                status.innerText = 'Status: Idle';
+            } else {
+                btn.innerText = 'Stop generating';
+                status.innerText = 'Status: Generating';
+            }
+        }
+
+        // Claude toggle
+        function toggleClaude() {
+            const btn = document.getElementById('claude-stop');
+            const indicator = document.getElementById('claude-indicator');
+            const status = document.getElementById('claude-status');
+            if (btn.style.display === 'block') {
+                btn.style.display = 'none';
+                indicator.style.display = 'none';
+                status.innerText = 'Status: Idle';
+            } else {
+                btn.style.display = 'block';
+                indicator.style.display = 'block';
+                status.innerText = 'Status: Generating';
+            }
+        }
+
+        // Perplexity toggle
+        function togglePerplexity() {
+            const btn = document.getElementById('perplexity-btn');
+            const indicator = document.getElementById('perplexity-indicator');
+            const status = document.getElementById('perplexity-status');
+            if (btn.style.display === 'block') {
+                btn.style.display = 'none';
+                indicator.style.display = 'none';
+                status.innerText = 'Status: Idle';
+            } else {
+                btn.style.display = 'block';
+                indicator.style.display = 'block';
+                status.innerText = 'Status: Generating';
+            }
+        }
+
+        // Log detection results
+        console.log('Test page loaded. Click toggle buttons to test state changes.');
+    </script>
+</body>
+</html>
