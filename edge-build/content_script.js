@@ -5,15 +5,26 @@
 /**
  * Waits for a certain element to appear on the page before allowing code to execute.
  * @param {string} selector - The CSS selector of the element to wait for.
- * @returns {Promise} - A promise that resolves when the element is found on the page.
+ * @param {number} timeout - Maximum time to wait in milliseconds (default: 10000)
+ * @returns {Promise} - A promise that resolves when the element is found on the page, or rejects on timeout.
  */
-function waitFor(selector) {
-  return new Promise((resolve) => {
+function waitFor(selector, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      resolve(element);
+      return;
+    }
+
+    const startTime = Date.now();
     const intervalId = setInterval(() => {
       const element = document.querySelector(selector);
       if (element) {
         clearInterval(intervalId);
         resolve(element);
+      } else if (Date.now() - startTime >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error(`Timeout waiting for element: ${selector}`));
       }
     }, 100);
   });
