@@ -47,37 +47,25 @@ function detectPlatform() {
  * @returns {boolean} - true if generating, false otherwise
  */
 function checkChatGPTTyping() {
-    const buttons = document.querySelectorAll("button");
-    let gptGeneratingButton;
+    // Try the specific selector first for better performance
+    let buttons = document.querySelectorAll("button.btn-neutral");
+
+    // Fallback to all buttons if btn-neutral class not found (in case UI changes)
+    if (!buttons || buttons.length === 0) {
+        buttons = document.querySelectorAll("button");
+    }
 
     if (buttons && buttons.length > 0) {
         for (let button of buttons) {
             const text = button.innerText || button.textContent;
-            // Check for the specific button text to ensure we find the right button
+            // Check for "Stop generating" means it's currently generating
             if (text === 'Stop generating') {
-                gptGeneratingButton = button;
-                break;
+                return true;
             }
         }
     }
 
-    // If not generating, check for "Regenerate response" button to confirm idle state
-    if (!gptGeneratingButton) {
-        for (let button of buttons) {
-            const text = button.innerText || button.textContent;
-            if (text === 'Regenerate response') {
-                // Found regenerate button, meaning it's not generating
-                return false;
-            }
-        }
-    }
-
-    if (gptGeneratingButton) {
-        const isGenerating = gptGeneratingButton.innerText === 'Stop generating' ||
-                           gptGeneratingButton.textContent === 'Stop generating';
-        return isGenerating;
-    }
-
+    // If we didn't find "Stop generating", it's not generating
     return false;
 }
 
