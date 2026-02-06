@@ -1,0 +1,36 @@
+{
+    "manifest_version": 2,
+    "name": "AI Chat Status Notifier",
+    "version": "0.0.5",
+    "description": "An Edge extension that lets you know when ChatGPT, Claude, or Perplexity has finished typing. Don't forget to pin the addon to your toolbar!",
+    "permissions": ["tabs", "storage", "activeTab", "https://chat.openai.com/*", "https://claude.ai/*", "https://www.perplexity.ai/*"],
+    "content_scripts": [
+        {
+          "matches": ["https://chat.openai.com/*", "https://claude.ai/*", "https://www.perplexity.ai/*"],
+          "js": ["content_script.js"]
+        }
+      ],
+    "background": {
+        "scripts": ["background.js"],
+        "persistent": false
+    },
+    "icons": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "browser_action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "48": "icons/icon48.png"
+      },
+      "default_title": "AI Chat Status Notifier"
+    },
+    "web_accessible_resources": [
+      "content_script.js"
+    ],
+    "author": "Smolk LLC",
+    "options_ui": {
+      "page": "options.html",
+      "chrome_style": true
+    }
+}

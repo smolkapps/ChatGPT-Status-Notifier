@@ -5,69 +5,139 @@
 /**
  * Waits for a certain element to appear on the page before allowing code to execute.
  * @param {string} selector - The CSS selector of the element to wait for.
- * @returns {Promise} - A promise that resolves when the element is found on the page.
+ * @param {number} timeout - Maximum time to wait in milliseconds (default: 10000)
+ * @returns {Promise} - A promise that resolves when the element is found on the page, or rejects on timeout.
  */
-function waitFor(selector) {
-  return new Promise((resolve) => {
+function waitFor(selector, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      resolve(element);
+      return;
+    }
+
+    const startTime = Date.now();
     const intervalId = setInterval(() => {
       const element = document.querySelector(selector);
       if (element) {
         clearInterval(intervalId);
         resolve(element);
+      } else if (Date.now() - startTime >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error(`Timeout waiting for element: ${selector}`));
       }
     }, 100);
   });
 }
 
 /**
- * Notifies the user whether GPT is still generating a response.
- * In a future version, this will also notify the user when GPT has finished generating a response via an alert.
- * May also notify via push notification when paired with an app.
+ * Detect which AI platform we're on
+ * @returns {string} - 'chatgpt', 'claude', or 'perplexity'
  */
-var checkWhetherGptTyping = function () {
+function detectPlatform() {
+    const hostname = window.location.hostname;
+    if (hostname.includes('openai.com')) return 'chatgpt';
+    if (hostname.includes('claude.ai')) return 'claude';
+    if (hostname.includes('perplexity.ai')) return 'perplexity';
+    return 'unknown';
+}
 
-    const buttons = document.querySelectorAll("button.btn-neutral");
-    let gptGeneratingButton;    // should be const
+/**
+ * Check if ChatGPT is typing
+ * @returns {boolean} - true if generating, false otherwise
+ */
+function checkChatGPTTyping() {
+    // Try the specific selector first for better performance
+    let buttons = document.querySelectorAll("button.btn-neutral");
+
+    // Fallback to all buttons if btn-neutral class not found (in case UI changes)
+    if (!buttons || buttons.length === 0) {
+        buttons = document.querySelectorAll("button");
+    }
+
     if (buttons && buttons.length > 0) {
         for (let button of buttons) {
-            if (button.innerText === 'Stop generating' || button.innerText === 'Regenerate response') {
-                gptGeneratingButton = button;
-                break;
+            const text = button.innerText || button.textContent;
+            // Check for "Stop generating" means it's currently generating
+            if (text === 'Stop generating') {
+                return true;
             }
         }
     }
 
-    const isGenerating = gptGeneratingButton && gptGeneratingButton.getAttribute('typing') === 'true';
-    let counter = 0; let showCounter = false;    // Counter to count how long it takes to generate a response
-    
-    if (gptGeneratingButton) {
-        if (!isGenerating && gptGeneratingButton.innerText === 'Stop generating') {
-            // This is the case where the user has clicked "Regenerate response" and the response is being generated
-            gptGeneratingButton.setAttribute('typing', 'true');
-            counter++; showCounter = true;
-        } else if (!isGenerating && gptGeneratingButton.innerText === 'Regenerate response') { // TODO: why does this work?
-            // This is the case where the user has clicked "Stop generating" or the response has been generated
-            gptGeneratingButton.setAttribute('typing', 'false');
-
-            // I can inject the time that it took to generate a response into the page here.
-            if (showCounter){
-                console.log(`Response time: ${counter} seconds`);
-                counter = 0;
-                showCounter = false;
-            }
-        }   // Todo: add a case for when the user gave too much text input and we have an error (the page must be refreshed)
-
-
-        // Send a message to the background script
-        browser.runtime.sendMessage({ type: "updateGeneratingState", data: gptGeneratingButton.getAttribute('typing') === 'true' });
-} else {
-        // if url contains /c/, then the user is in a chat
-        if (window.location.href.includes('/c/')) {
-            console.error('Could not find the button element for whether GPT is currently generating content.');
-        } // else the user is in a new chat, and there is no button element
-    }
-
+    // If we didn't find "Stop generating", it's not generating
+    return false;
 }
 
-// Call updateNotification function every 500ms
-setInterval(checkWhetherGptTyping, 500);
+/**
+ * Check if Claude is typing
+ * @returns {boolean} - true if generating, false otherwise
+ */
+function checkClaudeTyping() {
+    // Claude shows a "Stop" button when generating
+    const stopButton = document.querySelector('button[aria-label="Stop"]');
+    if (stopButton && stopButton.offsetParent !== null) {
+        return true;
+    }
+
+    // Also check for the typing indicator
+    const typingIndicator = document.querySelector('[data-test-render-type="streaming"]');
+    if (typingIndicator) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if Perplexity is typing
+ * @returns {boolean} - true if generating, false otherwise
+ */
+function checkPerplexityTyping() {
+    // Perplexity shows a stop button when generating
+    const stopButton = document.querySelector('button[aria-label="Stop generating"]');
+    if (stopButton && stopButton.offsetParent !== null) {
+        return true;
+    }
+
+    // Check for streaming indicator
+    const streamingDiv = document.querySelector('div[class*="streaming"]');
+    if (streamingDiv) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Notifies the user whether the AI is still generating a response.
+ * Works for ChatGPT, Claude, and Perplexity.
+ */
+var checkWhetherAITyping = function () {
+    const platform = detectPlatform();
+    let isGenerating = false;
+
+    switch(platform) {
+        case 'chatgpt':
+            isGenerating = checkChatGPTTyping();
+            break;
+        case 'claude':
+            isGenerating = checkClaudeTyping();
+            break;
+        case 'perplexity':
+            isGenerating = checkPerplexityTyping();
+            break;
+        default:
+            console.warn('Unknown platform:', window.location.hostname);
+            return;
+    }
+
+    // Send a message to the background script
+    browser.runtime.sendMessage({
+        type: "updateGeneratingState",
+        data: isGenerating
+    });
+}
+
+// Call update function every 500ms
+setInterval(checkWhetherAITyping, 500);
