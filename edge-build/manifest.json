@@ -28,5 +28,9 @@
     "web_accessible_resources": [
       "content_script.js"
     ],
-    "author": "Smolk LLC"
+    "author": "Smolk LLC",
+    "options_ui": {
+      "page": "options.html",
+      "chrome_style": true
+    }
 }
