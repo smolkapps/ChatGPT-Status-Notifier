@@ -15,10 +15,17 @@
  */
 let prevGeneratingState = false;
 
+let badgeClearTimeout = null;
+
 browser.runtime.onMessage.addListener((message, sender) => {
     if (message.type === "updateGeneratingState") {
         let badgeText;
         if (Boolean(message.data)) {
+            // Clear any pending badge clear timeout when starting to generate
+            if (badgeClearTimeout) {
+                clearTimeout(badgeClearTimeout);
+                badgeClearTimeout = null;
+            }
             badgeText = "…"
         } else {
             // play a sound if GPT is not typing now && was typing during the last message && the play sound setting is enabled
@@ -35,6 +42,12 @@ browser.runtime.onMessage.addListener((message, sender) => {
                 }).catch((error) => {
                     console.error(`Error: ${error}`);
                 });
+
+                // Clear the "!" badge after 3 seconds so it's visible longer
+                badgeClearTimeout = setTimeout(() => {
+                    browser.browserAction.setBadgeText({ text: "" });
+                    badgeClearTimeout = null;
+                }, 3000);
             } else {
                 badgeText = "";
             }
