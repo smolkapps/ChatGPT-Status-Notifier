@@ -1,0 +1,62 @@
+name: CI
+
+# Default-branch quality gate. Runs on every push and pull request and MUST stay
+# green. It only lints and builds the add-on -- it never talks to AMO, so a
+# routine push can never flap red on an AMO version collision or credentials
+# problem. Publishing/signing lives in a separate, manually-gated workflow
+# (.github/workflows/publish.yml).
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-lint-test:
+    name: Build, lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install web-ext
+        run: npm install -g web-ext
+
+      # Validate the extension. `web-ext lint` exits non-zero only on ERRORS,
+      # not warnings/notices, so warnings (e.g. the upcoming data_collection
+      # permission notice) do not fail the build.
+      - name: Lint add-on (web-ext lint)
+        run: web-ext lint --source-dir=. --self-hosted
+
+      # Sanity-check that every content/background script parses. Catches syntax
+      # errors that web-ext lint's validator may not surface.
+      - name: Syntax-check JavaScript
+        run: |
+          set -e
+          for f in background.js content_script.js popup.js options.js sounds.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+
+      # Produce the distributable .zip exactly as the publish job would, proving
+      # the package builds cleanly.
+      - name: Build add-on (web-ext build)
+        run: web-ext build --source-dir=. --overwrite-dest
+
+      - name: Upload built add-on artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-ext-artifact
+          path: web-ext-artifacts/*.zip
+          if-no-files-found: error

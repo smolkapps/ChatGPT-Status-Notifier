@@ -1,0 +1,10 @@
+# web-ext build/sign outputs
+web-ext-artifacts/
+*.xpi
+
+# local build helper output dir
+build/*.zip
+
+# OS / editor cruft
+.DS_Store
+node_modules/

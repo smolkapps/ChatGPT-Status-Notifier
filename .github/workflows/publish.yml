@@ -1,30 +1,87 @@
 name: Publish Firefox Add-on
 
+# INTENTIONAL, GATED publishing to addons.mozilla.org. This never runs on a
+# routine push to main, so it cannot make the default branch flap red on an AMO
+# version collision or a credentials problem. It fires ONLY when:
+#   * a maintainer manually runs it (Actions tab -> "Run workflow"), or
+#   * a version tag matching v* is pushed (e.g. `git tag v0.1.3 && git push --tags`).
+#
+# AMO rejects re-using a version number, so bump `version` in manifest.json (and
+# tag to match) before publishing. The sign step is non-blocking: if AMO rejects
+# the submission the workflow surfaces the failure without hard-failing, so a
+# version collision or transient AMO error never turns this red for the branch.
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'CHANGELOG.md'
-      - '.github/**'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
 
 jobs:
-  publish:
+  sign:
+    name: Sign & submit to AMO (listed)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
 
       - name: Install web-ext
         run: npm install -g web-ext
 
-      - name: Build and Sign Add-on
-        run: web-ext sign --api-key=${{ secrets.AMO_JWT_ISSUER }} --api-secret=${{ secrets.AMO_JWT_SECRET }} --channel=listed
+      # Fail fast with a clear message if the AMO JWT credentials are not
+      # configured, instead of letting web-ext emit an opaque auth error.
+      - name: Verify AMO credentials are present
         env:
-          WEB_EXT_SOURCE_DIR: '.'
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        run: |
+          if [ -z "$AMO_JWT_ISSUER" ] || [ -z "$AMO_JWT_SECRET" ]; then
+            echo "::error::AMO_JWT_ISSUER / AMO_JWT_SECRET secrets are not set. Add them in repo Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          echo "AMO credentials present."
+
+      # Read the manifest version so it is visible in the run log. AMO will
+      # reject the upload if this version is already published, which is why the
+      # version must be bumped before tagging/publishing.
+      - name: Show manifest version
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          echo "Publishing add-on version: $VERSION"
+          echo "If AMO rejects this as a duplicate, bump 'version' in manifest.json and retry."
+
+      # Non-blocking: an AMO version collision or transient error is reported but
+      # does not hard-fail. The default branch never runs this job anyway; this
+      # guard is belt-and-suspenders per the publishing design.
+      - name: Build and sign add-on (AMO listed channel)
+        id: sign
+        continue-on-error: true
+        run: >
+          web-ext sign
+          --source-dir=.
+          --channel=listed
+          --api-key="${{ secrets.AMO_JWT_ISSUER }}"
+          --api-secret="${{ secrets.AMO_JWT_SECRET }}"
+
+      - name: Report sign outcome
+        run: |
+          if [ "${{ steps.sign.outcome }}" != "success" ]; then
+            echo "::warning::web-ext sign did not succeed (outcome: ${{ steps.sign.outcome }}). Most common cause: the manifest version is already published on AMO -- bump it and retry. Also verify AMO_JWT_ISSUER / AMO_JWT_SECRET are valid."
+          else
+            echo "web-ext sign succeeded."
+          fi
+
+      - name: Upload signed artifact (if produced)
+        if: steps.sign.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-xpi
+          path: web-ext-artifacts/*.xpi
+          if-no-files-found: warn
