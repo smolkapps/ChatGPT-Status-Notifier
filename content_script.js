@@ -5,31 +5,45 @@
 /**
  * Waits for a certain element to appear on the page before allowing code to execute.
  * @param {string} selector - The CSS selector of the element to wait for.
- * @returns {Promise} - A promise that resolves when the element is found on the page.
+ * @param {number} timeout - Maximum time to wait in milliseconds (default: 10000)
+ * @returns {Promise} - A promise that resolves when the element is found on the page, or rejects on timeout.
  */
-function waitFor(selector) {
-  return new Promise((resolve) => {
+function waitFor(selector, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      resolve(element);
+      return;
+    }
+
+    const startTime = Date.now();
     const intervalId = setInterval(() => {
       const element = document.querySelector(selector);
       if (element) {
         clearInterval(intervalId);
         resolve(element);
+      } else if (Date.now() - startTime >= timeout) {
+        clearInterval(intervalId);
+        reject(new Error(`Timeout waiting for element: ${selector}`));
       }
     }, 100);
   });
 }
 
 /**
- * Determines whether the current site is ChatGPT or Claude
- * @returns {string} - 'chatgpt' or 'claude'
+ * Determines which supported AI site is open.
+ * @returns {string} - 'chatgpt', 'claude', 'gemini', 'perplexity', or 'unknown'
  */
 function getSiteType() {
-  if (window.location.href.includes('chat.openai.com') || window.location.href.includes('chatgpt.com')) {
+  const hostname = window.location.hostname;
+  if (['chat.openai.com', 'chatgpt.com', 'chat.com'].includes(hostname)) {
     return 'chatgpt';
-  } else if (window.location.href.includes('claude.ai')) {
+  } else if (hostname === 'claude.ai') {
     return 'claude';
-  } else if (window.location.href.includes('gemini.google.com')) {
+  } else if (hostname === 'gemini.google.com') {
     return 'gemini';
+  } else if (hostname === 'perplexity.ai' || hostname === 'www.perplexity.ai') {
+    return 'perplexity';
   }
   return 'unknown';
 }
@@ -52,10 +66,13 @@ function checkChatGPTTyping() {
   }
   
   // Fallback to old UI buttons
-  const oldUIButtons = document.querySelectorAll("button.btn-neutral");
+  let oldUIButtons = document.querySelectorAll("button.btn-neutral");
+  if (!oldUIButtons || oldUIButtons.length === 0) {
+    oldUIButtons = document.querySelectorAll("button");
+  }
   if (oldUIButtons && oldUIButtons.length > 0) {
     for (let button of oldUIButtons) {
-      if (button.innerText === 'Stop generating') {
+      if ((button.innerText || button.textContent) === 'Stop generating') {
         return true;
       }
     }
@@ -83,6 +100,10 @@ function checkClaudeTyping() {
     return true;
   }
   
+  const legacyStopButton = document.querySelector('button[aria-label="Stop"]');
+  if (legacyStopButton && legacyStopButton.offsetParent !== null) return true;
+  if (document.querySelector('[data-test-render-type="streaming"]')) return true;
+
   // As a secondary check, look for typing indicators
   const typingIndicator = document.querySelector('div[data-state="open"]');
   if (typingIndicator) {
@@ -114,6 +135,26 @@ function checkGeminiTyping() {
 }
 
 /**
+ * Check if Perplexity is typing
+ * @returns {boolean} - true if generating, false otherwise
+ */
+function checkPerplexityTyping() {
+    // Perplexity shows a stop button when generating
+    const stopButton = document.querySelector('button[aria-label="Stop generating"]');
+    if (stopButton && stopButton.offsetParent !== null) {
+        return true;
+    }
+
+    // Check for streaming indicator
+    const streamingDiv = document.querySelector('div[class*="streaming"]');
+    if (streamingDiv) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Notifies the user whether AI is still generating a response.
  */
 let responseTimeCounter = 0;
@@ -130,6 +171,8 @@ function checkAITypingStatus() {
     isGenerating = checkClaudeTyping();
   } else if (siteType === 'gemini') {
     isGenerating = checkGeminiTyping();
+  } else if (siteType === 'perplexity') {
+    isGenerating = checkPerplexityTyping();
   }
   
   // State transitions for local logging

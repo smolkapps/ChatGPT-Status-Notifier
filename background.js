@@ -13,10 +13,12 @@
  * Badge the app icon with "typing…" when AI (ChatGPT or Claude) is generating a response.
  * Also play a sound when the response is ready.
  */
+let badgeClearTimeout = null;
 let tabStates = {}; // Map of tabId -> { isChecking: boolean, isGenerating: boolean, site: string, hasStarted: boolean, checks: number, intervalId: number }
 
 // Evaluates all tracked tabs and updates the extension badge accordingly
 function evaluateGlobalState(lastActiveSite) {
+    if (badgeClearTimeout !== null) return;
     let anyGenerating = false;
     let activeSite = lastActiveSite || "unknown";
     
@@ -39,11 +41,14 @@ function evaluateGlobalState(lastActiveSite) {
 }
 
 function playNotificationSound(site, tabId) {
-    // Briefly show an exclamation mark on the badge, reverting to the global state after 500ms
+    // Keep the completion visible across polling messages, then restore the
+    // aggregate state (another tab may still be generating).
+    if (badgeClearTimeout !== null) clearTimeout(badgeClearTimeout);
     browser.browserAction.setBadgeText({ text: "!" });
-    setTimeout(() => {
+    badgeClearTimeout = setTimeout(() => {
+        badgeClearTimeout = null;
         evaluateGlobalState(site);
-    }, 500);
+    }, 3000);
 
     // Briefly prepend an exclamation mark to the front of the specific tab's title for 1s
     if (tabId) {
@@ -83,6 +88,7 @@ function stopCheckingTab(tabId) {
     const state = tabStates[tabId];
     if (state) {
         state.isChecking = false;
+        state.isGenerating = false;
         if (state.intervalId !== null) {
             clearInterval(state.intervalId);
             state.intervalId = null;
@@ -102,13 +108,20 @@ function startBackgroundPolling(tabId) {
             return;
         }
 
+        // One pending status request per tab avoids out-of-order completions.
+        if (state.inFlight) return;
+        state.inFlight = true;
         browser.tabs.sendMessage(tabId, { type: "checkStatus" }).then((response) => {
-            if (!response) return;
+            if (!state.isChecking || tabStates[tabId] !== state || !response) return;
             
             const isGenerating = response.isGenerating;
             const site = response.site || state.site;
             const prevState = state.isGenerating;
-            
+            if (isGenerating && !prevState && badgeClearTimeout !== null) {
+                clearTimeout(badgeClearTimeout);
+                badgeClearTimeout = null;
+            }
+
             state.isGenerating = isGenerating;
             state.site = site;
             state.checks++;
@@ -130,8 +143,11 @@ function startBackgroundPolling(tabId) {
             
         }).catch((err) => {
             // Tab might have been closed, navigated away, or disconnected
+            if (tabStates[tabId] !== state) return;
             stopCheckingTab(tabId);
             evaluateGlobalState(state.site);
+        }).finally(() => {
+            state.inFlight = false;
         });
         
     }, 500);

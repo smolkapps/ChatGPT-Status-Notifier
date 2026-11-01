@@ -1,0 +1,59 @@
+{
+  "manifest_version": 2,
+  "name": "AI Chat Status Notifier",
+  "version": "2.0.0",
+  "description": "Legacy Manifest V2 Edge build of AI Chat Status Notifier.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "activeTab",
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*",
+    "https://chat.com/*",
+    "https://claude.ai/*",
+    "https://gemini.google.com/*",
+    "https://perplexity.ai/*",
+    "https://www.perplexity.ai/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://chat.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "https://perplexity.ai/*",
+        "https://www.perplexity.ai/*"
+      ],
+      "js": [
+        "content_script.js"
+      ]
+    }
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  },
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon48.png"
+    },
+    "default_title": "AI Chat Status Notifier"
+  },
+  "web_accessible_resources": [
+    "content_script.js"
+  ],
+  "author": "Smolk LLC",
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
+  }
+}

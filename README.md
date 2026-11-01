@@ -1,6 +1,6 @@
 # AI Chat Status Notifier
 
-This repository hosts the code for the Firefox Addon, "AI Chat Status Notifier". The addon notifies users when ChatGPT, Claude, or Gemini has finished typing in the chat. It is ideal for those who use AI chat interfaces regularly and want real-time updates on the typing status constraint-free.
+This repository hosts the code for the Firefox Addon, "AI Chat Status Notifier". The addon notifies users when ChatGPT, Claude, Gemini, or Perplexity has finished typing in the chat. It is ideal for those who use AI chat interfaces regularly and want real-time updates on the typing status constraint-free.
 
 🌐 **[Visit the Marketing Page](https://www.smolkin.org/addons/ChatGPT-Status-Notifier.html)**
 
@@ -9,7 +9,7 @@ This repository hosts the code for the Firefox Addon, "AI Chat Status Notifier".
 
 ## Features
 
-- Real-time notification when ChatGPT, Claude, or Gemini finishes typing
+- Real-time notification when ChatGPT, Claude, Gemini, or Perplexity finishes typing
 - Support for concurrent tabs (Note: Works best when the AI chatting is the actively-focused tab within its respective window, as complex web apps may suspend DOM rendering while entirely hidden)
 - Easy to use and lightweight
 - Maintains your privacy - no data is stored or transmitted
@@ -31,23 +31,19 @@ To install the AI Chat Status Notifier Firefox Addon:
 
 ## Building from Source
 
-There is no build process required. Simply clone the repository and run `npm run build` or use the `build` script to package the extension into a zip file.
+The source has no compilation step. Use [web-ext](https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/) to validate and package the Firefox add-on:
 
-You can then load the extension in Firefox by going to `about:debugging#/runtime/this-firefox` and clicking "Load Temporary Add-on...".
+```sh
+web-ext lint --source-dir=. --self-hosted
+node --test tests/*.test.cjs
+web-ext build --source-dir=. --overwrite-dest
+```
 
-The build script will create a zip file in the `build` directory.
+The generated ZIP is in `web-ext-artifacts/`. Load the root `manifest.json` using Firefox's `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** in a disposable profile to test the current source. See [INSTALLATION.md](INSTALLATION.md) for the separate legacy Edge source and compatibility limits.
 
-You can also load the extension in Firefox by going to `about:debugging#/runtime/this-firefox` and clicking "Load Temporary Add-on...".
+## Publishing via GitHub Actions
 
-1. Download or clone this repository
-2. Open Firefox and navigate to `about:debugging`
-3. Click on "This Firefox"
-4. Click on "Load Temporary Add-on"
-5. Open the downloaded or cloned folder and select any file inside the folder
-
-## Automatic Publishing via GitHub Actions
-
-This repository is configured to automatically publish new updates to the Mozilla Add-on store whenever new commits are pushed to the `main` branch. 
+Routine pushes and pull requests run lint, tests and packaging only. The separate AMO publishing workflow runs only by manual dispatch or a `v*` tag. Building or merging source does not publish a store update. Store submission requires separate release approval and an unused manifest version.
 
 ## Usage
 
@@ -63,7 +59,7 @@ After successfully installing the ChatGPT Status Notifier, follow these steps to
 
 The icon for the AI Chat Status Notifier should now appear in your toolbar, allowing you to see when an AI is typing.
 
-Once pinned, navigate to [ChatGPT](https://chatgpt.com/), [Claude](https://claude.ai/), or [Gemini](https://gemini.google.com/). Whenever the AI finishes typing, you'll see via the addon icon in your toolbar.
+Once pinned, navigate to [ChatGPT](https://chatgpt.com/), [Claude](https://claude.ai/), or [Gemini](https://gemini.google.com/), or [Perplexity](https://www.perplexity.ai/). Whenever the AI finishes typing, you'll see via the addon icon in your toolbar.
 
 Remember to ensure that the addon is enabled in your Firefox Extensions settings for it to function correctly.
 

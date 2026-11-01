@@ -44,10 +44,13 @@ jobs:
       - name: Syntax-check JavaScript
         run: |
           set -e
-          for f in background.js content_script.js popup.js options.js sounds.js; do
+          for f in background.js content_script.js popup.js options.js sounds.js edge-build/*.js; do
             echo "checking $f"
             node --check "$f"
           done
+
+      - name: Test notification behavior
+        run: node --test tests/*.test.cjs
 
       # Produce the distributable .zip exactly as the publish job would, proving
       # the package builds cleanly.

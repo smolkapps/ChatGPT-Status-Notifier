@@ -8,6 +8,9 @@ export default {
   ignoreFiles: [
     'META-INF/**',        // leftover signature dir from a previously-signed .xpi
     'porting_to_chrome/**',
+    'edge-build/**',       // separate legacy Edge source package
+    'tests/**',            // source regression tests
+    'test-*.js',
     'images/**',          // README screenshots, not add-on assets
     'build',              // interactive bash build helper
     'addon_v*.zip',       // local build outputs
