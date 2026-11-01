@@ -8,3 +8,6 @@ build/*.zip
 # OS / editor cruft
 .DS_Store
 node_modules/
+
+# AMO tooling transient identifier
+.amo-upload-uuid

@@ -2,12 +2,15 @@
 
 This repository hosts the code for the Firefox Addon, "AI Chat Status Notifier". The addon notifies users when ChatGPT, Claude, or Gemini has finished typing in the chat. It is ideal for those who use AI chat interfaces regularly and want real-time updates on the typing status constraint-free.
 
+🌐 **[Visit the Marketing Page](https://www.smolkin.org/addons/ChatGPT-Status-Notifier.html)**
+
 ![Addon Screenshot while GPT is typing](<images/screenshot typing.png>)
 ![Addon Screenshot when GPT isn't typing](<images/screenshot idle.png>)
 
 ## Features
 
 - Real-time notification when ChatGPT, Claude, or Gemini finishes typing
+- Support for concurrent tabs (Note: Works best when the AI chatting is the actively-focused tab within its respective window, as complex web apps may suspend DOM rendering while entirely hidden)
 - Easy to use and lightweight
 - Maintains your privacy - no data is stored or transmitted
 
@@ -17,13 +20,13 @@ This project is a derivative of the [ChatGPT Search](https://github.com/msmolkin
 
 I decided to split this functionality out into its own project, resulting in the ChatGPT Status Notifier. Despite having fewer moving parts, this status notifier is likely to be more relevant to a wider audience and gain more traction. It's also easier to understand and modify. I hope you enjoy it!
 
-**Side Note:** You might have noticed that the code for this project is, dare I say, flawless. Yes, I take pride in the quality of my work. My code is always this perfect — well-commented, well-structured, and well... just well. But don't let that intimidate you. I believe that great code should inspire, not dishearten. So feel free to dive in, learn, and contribute to this perfection. I welcome it.
+**Side Note:** You might have noticed that the code for this project is, dare I say, flawless. Yes, I take pride in the quality of my work. My code is always this perfect — well-commented, well-structured, and well... just well. But don't let that intimidate you. I believe that great code should inspire, not dishearten. So feel free to dive in, learn, and contribute to this perfection. I welcome it. Many people are good at pointing out flaws, but few are good at providing good solutions. So, please, don't hesitate to submit a pull request or open an issue if you find a flaw or have a suggestion.
 
 ## Installation
 
 To install the AI Chat Status Notifier Firefox Addon:
 
-1. Visit the [Mozilla Addon Page](https://addons.mozilla.org/en-US/firefox/addon/chatgpt-status-notifier/) for ChatGPT Status Notifier.
+1. Visit the [Mozilla Addon Page](https://addons.mozilla.org/en-US/firefox/addon/ai-status-notifier/) for ChatGPT Status Notifier.
 2. Click on the "Add to Firefox" button and follow the prompts.
 
 ## Building from Source
@@ -78,4 +81,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Michael - [Twitter](https://twitter.com/MichaelSmolkin) - github@smolkin.org
 
-Project Link: [https://github.com/msmolkin/ChatGPT-Status-Notifier](https://github.com/msmolkin/ChatGPT-Status-Notifier)
+Project Link: [https://github.com/smolkapps/ChatGPT-Status-Notifier](https://github.com/smolkapps/ChatGPT-Status-Notifier)

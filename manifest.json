@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "AI Chat Status Notifier",
-  "version": "0.1.2",
+  "version": "2.0.0",
   "description": "A Firefox add-on that lets you know when ChatGPT, Claude, or Gemini has finished typing. Don't forget to pin the addon to your toolbar to be able to see when it finishes typing!",
   "permissions": [
     "tabs",
@@ -72,7 +72,10 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "{47d018dd-59c1-4de0-abca-c010ca272a81}"
+      "id": "{47d018dd-59c1-4de0-abca-c010ca272a81}",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   }
 }

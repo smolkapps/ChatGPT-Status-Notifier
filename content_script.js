@@ -116,9 +116,9 @@ function checkGeminiTyping() {
 /**
  * Notifies the user whether AI is still generating a response.
  */
-let prevGeneratingState = false;
 let responseTimeCounter = 0;
 let timerInterval = null;
+let isGeneratingState = false;
 
 function checkAITypingStatus() {
   const siteType = getSiteType();
@@ -132,11 +132,9 @@ function checkAITypingStatus() {
     isGenerating = checkGeminiTyping();
   }
   
-  // State transitions
-  if (isGenerating !== prevGeneratingState) {
-    // AI started typing
-    if (isGenerating && !prevGeneratingState) {
-      // Reset and start counter
+  // State transitions for local logging
+  if (isGenerating !== isGeneratingState) {
+    if (isGenerating && !isGeneratingState) {
       responseTimeCounter = 0;
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
@@ -144,25 +142,57 @@ function checkAITypingStatus() {
       }, 1000);
     }
     
-    // AI finished typing
-    if (!isGenerating && prevGeneratingState) {
-      // Stop counter and log time
+    if (!isGenerating && isGeneratingState) {
       if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
         console.log(`${siteType} response time: ${responseTimeCounter} seconds`);
       }
     }
-    
-    // Send message to background script
-    browser.runtime.sendMessage({
-      type: "updateGeneratingState",
-      data: isGenerating,
-      site: siteType
-    });
-    prevGeneratingState = isGenerating;
+    isGeneratingState = isGenerating;
   }
+  
+  return { isGenerating, site: siteType };
 }
 
-// Call updateNotification function every 500ms
-setInterval(checkAITypingStatus, 500);
+// Event-driven logic: tell background script to start checking us
+function handleUserAction() {
+  browser.runtime.sendMessage({
+    type: "startObserving",
+    site: getSiteType()
+  });
+}
+
+// Start observing when user presses Enter (without Shift) or clicks a button
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    handleUserAction();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('button') || e.target.closest('[role="button"]');
+  if (target) {
+    handleUserAction();
+  }
+});
+
+let originalTitle = document.title;
+let titleExclamationTimeout = null;
+
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "checkStatus") {
+    return Promise.resolve(checkAITypingStatus());
+  } else if (message.type === "showTitleExclamation") {
+    // Save the original title just in case it changed since page load
+    if (!document.title.startsWith("(!) ")) {
+      originalTitle = document.title;
+      document.title = "(!) " + originalTitle;
+    }
+  } else if (message.type === "hideTitleExclamation") {
+    // Restore the title explicitly, removing the exactly matched (!)
+    if (document.title.startsWith("(!) ")) {
+      document.title = document.title.substring(4);
+    }
+  }
+});
